@@ -10,6 +10,8 @@ class Node
         inputs = new List<Weight>();
     }
 
+    public double delta;
+
     private double? bias;
     public double? Bias
     {
@@ -41,14 +43,42 @@ class Node
     public void CalculateOutput()
     {
         // Dot product of inputs and weights, plus bias.
-        double sum = 0;
+        double sum = (double)Bias;
         for (int i = 0; i < inputs.Count; i++)
         {
             Node origin = inputs[i].origin;
-            sum += (double)Bias + origin.Output * inputs[i].value;
+            sum += origin.Output * inputs[i].value;
         }
 
         // Return sigmoid function result from dot product of inputs and weights, plus bias.
         Output = 1 / (1 + Math.Pow(Math.E, -sum));
+    }
+
+    public void BackwardsPass(double correctVal)
+    {
+        // Update delta of output node
+        delta = (correctVal - Output) * (Output * (1 - Output));
+
+        // Update delta of hidden nodes
+        for (int i = 0; i < inputs.Count; i++)
+        {
+            Weight weight = inputs[i];
+            Node origin = weight.origin;
+
+            origin.delta = weight.value * delta * origin.Output * (1 - origin.Output);
+        }        
+    }
+
+    public void UpdateWeights(double stepSize)
+    {
+        Bias = Bias + stepSize * delta;
+
+        for (int i = 0; i < inputs.Count; i++)
+        {
+            Weight weight = inputs[i];
+            Node origin = weight.origin;
+
+            weight.value = weight.value + stepSize * delta * origin.Output;
+        }
     }
 }
