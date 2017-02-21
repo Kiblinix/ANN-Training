@@ -21,10 +21,10 @@ class MLPTraining
         printData(trainingData, "normalised.csv");
 
         // Set network attributes
-        int numHiddenNodes = 100;
+        int numHiddenNodes = 4;
         double stepSize = 0.1;
         int numInputs = trainingData[0].Count - 1;
-        int numCycles = 500;
+        int numCycles = 10000;
 
         // Initialise Network
         List<Node> inputLayer = new List<Node>();
@@ -90,20 +90,14 @@ class MLPTraining
                 {
                     hiddenLayer[j].UpdateWeights(stepSize);
                 }
-                sum += Math.Pow(outputNode.Output - row[row.Count - 1], 2);
-                if (n % 1 == 0 && i == 0)
-                {
-                    if (outputNode.Output > 0.9)
-                    {
-                        Console.WriteLine("whoops");
-                    }
-                    
-                    //Console.WriteLine("Pass: " + n + "\tError: " + Math.Pow(outputNode.Output - row[row.Count - 1], 2));
-                    //Debug.Print(Math.Pow(outputNode.Output - row[row.Count - 1], 2).ToString());
-                }      
+
+                if (n == numCycles-1) Debug.Print(outputNode.Output.ToString() + "\t" + row[row.Count - 1]);
+
+                sum += Math.Pow(outputNode.Output - row[row.Count - 1], 2); 
             }
+
             double avgError = sum / trainingData.Count;
-            Debug.Print(avgError.ToString());
+            //Debug.Print(avgError.ToString());
         }
 
         // Test network
@@ -154,7 +148,7 @@ class MLPTraining
     {
         List<List<double>> trainingData = new List<List<double>>();
 
-        using (StreamReader reader = new StreamReader("../../CWDataStudent2.txt"))
+        using (StreamReader reader = new StreamReader("../../CWDataStudent.txt"))
         {
             string row;
             while ((row = reader.ReadLine()) != null)
@@ -173,7 +167,8 @@ class MLPTraining
                         failed = true;
                     }
 
-                    data.Add(field);           
+                    if (i != 4)   // Ignore columns 2 and 3 as they have low correlation
+                        data.Add(field);           
                 }
 
                 if (!failed) { trainingData.Add(data); }
@@ -228,7 +223,7 @@ class MLPTraining
         }
         catch
         {
-            // File might be in used, don't care, do nothing.
+            // File might be in use, don't care, do nothing.
         }
         
     }
