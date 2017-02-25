@@ -43,7 +43,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Network.cs" />
     <Compile Include="Weight.cs" />
     <Compile Include="MLPTraining.cs" />
     <Compile Include="Node.cs" />
