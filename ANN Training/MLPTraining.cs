@@ -1,18 +1,15 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Diagnostics;
 
 class MLPTraining
 {
-    static Random rand = new Random();
-
     static void Main(string[] args)
     {
         //testAll();
-        //return;
+        //return;        
 
         // Import Data
         List<List<double>> trainingData = readData();
@@ -20,128 +17,11 @@ class MLPTraining
         trainingData = normaliseData(trainingData);
         printData(trainingData, "normalised.csv");
 
-        // Set network attributes
-        int numHiddenNodes = 4;
-        double stepSize = 0.1;
-        int numInputs = trainingData[0].Count - 1;
-        int numCycles = 10000;
+        Network firstNetwork = new Network(trainingData, 8, 2000, 0.1);
+        firstNetwork.ExecuteNetwork();
 
-        // Initialise Network
-        List<Node> inputLayer = new List<Node>();
-        for (int i = 0; i < numInputs; i++)
-        {
-            Node input = new Node();
-            inputLayer.Add(input);
-        }
-
-        List<Node> hiddenLayer = new List<Node>();
-        for (int i = 0; i < numHiddenNodes; i++)
-        {
-            Node hiddenNode = new Node();
-            hiddenNode.Bias = randomiseWeight(numInputs);
-
-            for (var j = 0; j < inputLayer.Count; j++)
-            {
-                Weight inputWeight = new Weight(inputLayer[j], randomiseWeight(numInputs));
-                hiddenNode.inputs.Add(inputWeight);
-            }
-
-            hiddenLayer.Add(hiddenNode);
-        }
-
-        Node outputNode = new Node();
-        outputNode.Bias = randomiseWeight(numInputs);
-        for (var i = 0; i < hiddenLayer.Count; i++)
-        {
-            Weight inputWeight = new Weight(hiddenLayer[i], randomiseWeight(numInputs));
-            outputNode.inputs.Add(inputWeight);            
-        }
-
-        // Train network
-        for (int n = 0; n < numCycles; n++)
-        {
-            double sum = 0;
-            for (int i = 0; i < trainingData.Count; i++)
-            {
-                List<double> row = trainingData[i];
-                
-                // Set input nodes to input values
-                for (var j = 0; j < inputLayer.Count; j++)
-                {
-                    inputLayer[j].Output = row[j];
-                }
-
-                // Forward pass to hidden layer
-                for (var j = 0; j < hiddenLayer.Count; j++)
-                {
-                    hiddenLayer[j].CalculateOutput();
-                }
-
-                // Forward pass to output node
-                outputNode.CalculateOutput();
-
-                // Do backwards pass and set delta for each node
-                // Carries through to hidden nodes
-                outputNode.BackwardsPass(row[row.Count - 1]);
-
-                // Update weights and biases
-                outputNode.UpdateWeights(stepSize);
-                for (var j = 0; j < hiddenLayer.Count; j++)
-                {
-                    hiddenLayer[j].UpdateWeights(stepSize);
-                }
-
-                if (n == numCycles-1) Debug.Print(outputNode.Output.ToString() + "\t" + row[row.Count - 1]);
-
-                sum += Math.Pow(outputNode.Output - row[row.Count - 1], 2); 
-            }
-
-            double avgError = sum / trainingData.Count;
-            //Debug.Print(avgError.ToString());
-        }
-
-        // Test network
-        double totalError = 0;
-        for (int i = 0; i < trainingData.Count; i++)
-        {
-            List<double> row = trainingData[i];
-
-            // Set input nodes to input values
-            for (var j = 0; j < inputLayer.Count; j++)
-            {
-                inputLayer[j].Output = row[j];
-            }
-
-            // Forward pass to hidden layer
-            for (var j = 0; j < hiddenLayer.Count; j++)
-            {
-                hiddenLayer[j].CalculateOutput();
-            }
-
-            // Forward pass to output node
-            outputNode.CalculateOutput();
-
-            totalError += Math.Pow(outputNode.Output - row[row.Count - 1], 2);
-        }
-
-        double meanSquaredError = totalError / trainingData.Count;
-
-        Console.WriteLine(meanSquaredError);
-
-        //Console.WriteLine("");
-        //Console.WriteLine("Bias: " + weights[0]);
-        //Console.WriteLine("w1:   " + weights[1]);
-        //Console.WriteLine("w2:   " + weights[2]);
-        //Console.WriteLine("");
         Console.WriteLine("Press any key to exit.");
         Console.Read();
-    }
-
-    static double randomiseWeight(int numInputs)
-    {
-        // Randomise weight/bias based on number of inputs between -2/n and +2/n        
-        double val = (rand.NextDouble() * 2 / numInputs) - 2 / numInputs;        
-        return val;
     }
 
     static List<List<double>> readData()
