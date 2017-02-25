@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 class MLPTraining
@@ -10,79 +9,14 @@ class MLPTraining
     {
         //testAll();
         //return;        
-
-        // Import Data
-        List<List<double>> trainingData = readData();
-        printData(trainingData, "imported.csv");
-        trainingData = normaliseData(trainingData);
-        printData(trainingData, "normalised.csv");
-
-        Network firstNetwork = new Network(trainingData, 8, 2000, 0.1);
+                
+        Network firstNetwork = new Network(4, 2000, 0.1);
         firstNetwork.ExecuteNetwork();
-
+        
         Console.WriteLine("Press any key to exit.");
         Console.Read();
     }
-
-    static List<List<double>> readData()
-    {
-        List<List<double>> trainingData = new List<List<double>>();
-
-        using (StreamReader reader = new StreamReader("../../CWDataStudent.txt"))
-        {
-            string row;
-            while ((row = reader.ReadLine()) != null)
-            {
-                // Split tab delimited rows.
-                string[] splitRow = row.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                List<double> data = new List<double>();
-
-                bool failed = false;
-                for (var i = 0; i < splitRow.Length; i++)
-                {
-                    // If conversion to double fails, skip whole row.
-                    double field;                    
-                    if (!Double.TryParse(splitRow[i], out field) || field == -999)
-                    {
-                        failed = true;
-                    }
-
-                    if (i != 4)   // Ignore columns 2 and 3 as they have low correlation
-                        data.Add(field);           
-                }
-
-                if (!failed) { trainingData.Add(data); }
-            }
-
-            reader.Close();
-        }
-
-        return trainingData;
-    }
-
-    static List<List<double>> normaliseData(List<List<double>> data)
-    {
-        List<List<double>> normalisedData = new List<List<double>>();
-        for (var i = 0; i < data.Count; i++)
-        {
-            List<double> row = data[i];
-            List<double> newRow = new List<double>();
-
-            for (int j = 0; j < row.Count; j++)
-            {
-                double columnMax = data.Max(u => u[j]);
-                double columnMin = data.Min(u => u[j]);
-
-                // Normalise between 0.1 and 0.9
-                newRow.Add(((row[j] - columnMin) / (columnMax - columnMin)) * 0.8 + 0.1);
-            }
-
-            normalisedData.Add(newRow);
-        }
-
-        return normalisedData;
-    }
-
+    
     static void printData(List<List<double>> data, string filePath)
     {
         var csv = new StringBuilder();
