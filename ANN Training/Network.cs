@@ -68,7 +68,6 @@ class Network
     {
         for (int n = 0; n < numCycles; n++)
         {
-            double sum = 0;
             for (int i = 0; i < data.Count; i++)
             {
                 List<double> row = data[i];
@@ -97,18 +96,13 @@ class Network
                 for (var j = 0; j < hiddenLayer.Count; j++)
                 {
                     hiddenLayer[j].UpdateWeights(stepSize);
-                }
-                
-                sum += Math.Pow(outputNode.Output - row[row.Count - 1], 2);
-            }
-
-            double avgError = sum / data.Count;
+                }                
+            }            
         }
     }
 
     private void TestNetwork()
     {
-        double totalError = 0;
         for (int i = 0; i < data.Count; i++)
         {
             List<double> row = data[i];
@@ -127,13 +121,7 @@ class Network
 
             // Forward pass to output node
             outputNode.CalculateOutput();
-
-            totalError += Math.Pow(outputNode.Output - row[row.Count - 1], 2);
         }
-
-        double meanSquaredError = totalError / data.Count;
-
-        Console.WriteLine(meanSquaredError);
     }
 
     private double RandomiseWeight(int numInputs)
