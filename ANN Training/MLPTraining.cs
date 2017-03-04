@@ -10,7 +10,7 @@ class MLPTraining
         //testAll();
         //return;        
                 
-        Network firstNetwork = new Network(4, 2000, 0.1);
+        Network firstNetwork = new Network(5, 10000, 0.1);
         firstNetwork.ExecuteNetwork();
         
         Console.WriteLine("Press any key to exit.");
@@ -39,7 +39,6 @@ class MLPTraining
         {
             // File might be in use, don't care, do nothing.
         }
-        
     }
 
     static void testAll()

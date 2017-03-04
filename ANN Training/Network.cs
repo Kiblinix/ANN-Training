@@ -107,7 +107,9 @@ class Network
                 {
                     hiddenLayer[j].UpdateWeights(stepSize);
                 }                
-            }            
+            }
+
+            if (n % 500 == 499) Console.WriteLine(n + 1 + " passes complete.");           
         }
     }
 
@@ -134,6 +136,7 @@ class Network
             // Forward pass to output node
             outputNode.CalculateOutput();
 
+            // Undo the data normalisation back to the previous min/max range
             double predictedOutput = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
             double correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
 
@@ -144,7 +147,7 @@ class Network
 
         // Calculated Root Mean Squared Error
         double RMSE = Math.Sqrt(totalError / testSet.Count);
-        Console.WriteLine(RMSE);
+        Console.WriteLine("RMSE: " + RMSE);
     }
 
     private double RandomiseWeight()
@@ -224,6 +227,6 @@ class Network
 
         trainingSet = data.GetRange(0, trainingAmount);
         validationSet = data.GetRange(trainingAmount, validationAmount);
-        testSet = data.GetRange(validationAmount, testAmount);
+        testSet = data.GetRange(trainingAmount + validationAmount, testAmount);
     }
 }
