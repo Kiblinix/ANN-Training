@@ -22,6 +22,9 @@ class Network
     private double stepSize;
     private int numInputs;
 
+    private double previousError = 999;
+    private double RMSE;
+
     // Used for de-normalising the output.
     private double outputColumnMin;
     private double outputColumnMax;
@@ -109,8 +112,63 @@ class Network
                 }                
             }
 
-            if (n % 500 == 499) Console.WriteLine(n + 1 + " passes complete.");           
+            // Every 100 epochs, test against validation set
+            // If performance goes down, stop training.
+            if (n % 500 == 0)
+            {
+                if (ValidateNetwork())
+                {
+                    Console.WriteLine("Error Increased, Exiting");
+                    break;
+                }
+            }
+
+            if (n % 500 == 499) Console.WriteLine(n + 1 + " passes complete.");
         }
+    }
+
+    private bool ValidateNetwork()
+    {
+        // Returns true if error has increased
+        // Testing should stop
+
+        double totalError = 0;
+
+        for (int i = 0; i < validationSet.Count; i++)
+        {
+            List<double> row = validationSet[i];
+
+            // Set input nodes to input values
+            for (var j = 0; j < inputLayer.Count; j++)
+            {
+                inputLayer[j].Output = row[j];
+            }
+
+            // Forward pass to hidden layer
+            for (var j = 0; j < hiddenLayer.Count; j++)
+            {
+                hiddenLayer[j].CalculateOutput();
+            }
+
+            // Forward pass to output node
+            outputNode.CalculateOutput();
+
+            // Undo the data normalisation back to the previous min/max range
+            double predictedOutput = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
+            double correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
+            totalError += Math.Pow((predictedOutput - correctOutput), 2);
+        }
+
+        double currentError = Math.Sqrt(totalError / testSet.Count);
+        //Console.WriteLine("Curr: " + currentError + "  Prev: " + previousError);
+
+        if (currentError > previousError)
+        {
+            return true;
+        }
+
+        previousError = currentError;
+        return false;
     }
 
     private void TestNetwork()
@@ -146,7 +204,7 @@ class Network
         }
 
         // Calculated Root Mean Squared Error
-        double RMSE = Math.Sqrt(totalError / testSet.Count);
+        RMSE = Math.Sqrt(totalError / testSet.Count);
         Console.WriteLine("RMSE: " + RMSE);
     }
 
