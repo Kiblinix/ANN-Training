@@ -12,10 +12,10 @@ class Network
     private List<Node> hiddenLayer = new List<Node>();
     private Node outputNode = new Node();
 
-    private List<List<double>> data = new List<List<double>>();
-    private List<List<double>> trainingSet = new List<List<double>>();
-    private List<List<double>> validationSet = new List<List<double>>();
-    private List<List<double>> testSet = new List<List<double>>();
+    static private List<List<double>> data = new List<List<double>>();
+    static private List<List<double>> trainingSet = new List<List<double>>();
+    static private List<List<double>> validationSet = new List<List<double>>();
+    static private List<List<double>> testSet = new List<List<double>>();
 
     private int numHiddenNodes;   
     private double stepSize;
@@ -27,29 +27,52 @@ class Network
     private double RMSE;
 
     // Used for de-normalising the output.
-    private double outputColumnMin;
-    private double outputColumnMax;
+    static private double outputColumnMin;
+    static private double outputColumnMax;
 
     public Network(int numHiddenNodes, int numCycles, double stepSize)
     {
         this.numHiddenNodes = numHiddenNodes;
         this.numCycles = numCycles;
+        actualCycles = numCycles;
         this.stepSize = stepSize;
-    }   
+    }      
 
     public void ExecuteNetwork()
     {
-        ReadData("../../CWDataStudent.txt");
-        NormaliseData();
-        SplitData();
+        if (data.Count == 0)
+        {
+            ReadData("../../CWDataStudent.txt");
+            ShuffleData();
+            NormaliseData();
+            SplitData();
+        }        
 
         InitialiseNetwork();
         TrainNetwork();
         TestNetwork();        
-    }    
+    }
+
+    private void ShuffleData()
+    {
+        // Randomly shuffle input data
+        // Before splitting into Training, Validation and Test sets
+        // Based on Fisher-Yates Shuffle
+
+        int n = data.Count;
+        while (n > 1)
+        {
+            n--;
+            int k = rand.Next(n + 1);
+            List<Double> value = data[k];
+            data[k] = data[n];
+            data[n] = value;
+        }
+    }
 
     private void InitialiseNetwork()
     {
+        numInputs = data[0].Count - 1;
         for (int i = 0; i < numInputs; i++)
         {
             Node input = new Node();
@@ -120,7 +143,7 @@ class Network
                 if (ValidateNetwork())
                 {
                     actualCycles = n;
-                    //break;
+                    break;
                 }
             }
 
@@ -161,12 +184,13 @@ class Network
         }
 
         double currentError = Math.Sqrt(totalError / validationSet.Count);
-        //if (currentError > previousError)
-        //{
-        //    return true;
-        //}
 
-        Console.WriteLine("Err: " + currentError);
+        //Console.WriteLine("Err: " + currentError);
+
+        if (currentError > previousError)
+        {
+            return true;
+        }
 
         previousError = currentError;
         return false;
@@ -204,6 +228,7 @@ class Network
 
         // Calculated Root Mean Squared Error
         RMSE = Math.Sqrt(totalError / testSet.Count);
+        //Console.WriteLine("RMSE: " + RMSE);
     }
 
     private double RandomiseWeight()
@@ -243,8 +268,6 @@ class Network
 
             reader.Close();
         }
-
-        numInputs = data[0].Count - 1;
     }
 
     private void NormaliseData()
