@@ -17,10 +17,11 @@ class Network
     private List<List<double>> validationSet = new List<List<double>>();
     private List<List<double>> testSet = new List<List<double>>();
 
-    private int numHiddenNodes;
-    private int numCycles;
+    private int numHiddenNodes;   
     private double stepSize;
     private int numInputs;
+    private int numCycles;
+    private int actualCycles;
 
     private double previousError = 999;
     private double RMSE;
@@ -34,7 +35,7 @@ class Network
         this.numHiddenNodes = numHiddenNodes;
         this.numCycles = numCycles;
         this.stepSize = stepSize;
-    }
+    }   
 
     public void ExecuteNetwork()
     {
@@ -44,7 +45,7 @@ class Network
 
         InitialiseNetwork();
         TrainNetwork();
-        TestNetwork();
+        TestNetwork();        
     }    
 
     private void InitialiseNetwork()
@@ -112,18 +113,18 @@ class Network
                 }                
             }
 
-            // Every 100 epochs, test against validation set
+            // Every 500 epochs, test against validation set
             // If performance goes down, stop training.
             if (n % 500 == 0)
             {
                 if (ValidateNetwork())
                 {
-                    Console.WriteLine("Error Increased, Exiting");
-                    break;
+                    actualCycles = n;
+                    //break;
                 }
             }
 
-            if (n % 500 == 499) Console.WriteLine(n + 1 + " passes complete.");
+            //if (n % 500 == 499) Console.WriteLine(n + 1 + " passes complete.");
         }
     }
 
@@ -159,13 +160,13 @@ class Network
             totalError += Math.Pow((predictedOutput - correctOutput), 2);
         }
 
-        double currentError = Math.Sqrt(totalError / testSet.Count);
-        //Console.WriteLine("Curr: " + currentError + "  Prev: " + previousError);
+        double currentError = Math.Sqrt(totalError / validationSet.Count);
+        //if (currentError > previousError)
+        //{
+        //    return true;
+        //}
 
-        if (currentError > previousError)
-        {
-            return true;
-        }
+        Console.WriteLine("Err: " + currentError);
 
         previousError = currentError;
         return false;
@@ -197,21 +198,19 @@ class Network
             // Undo the data normalisation back to the previous min/max range
             double predictedOutput = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
             double correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
-
-            Debug.Print(predictedOutput + " \t " + correctOutput);
-
+            
             totalError += Math.Pow((predictedOutput - correctOutput), 2);
         }
 
         // Calculated Root Mean Squared Error
         RMSE = Math.Sqrt(totalError / testSet.Count);
-        Console.WriteLine("RMSE: " + RMSE);
     }
 
     private double RandomiseWeight()
     {
         // Randomise weight/bias based on number of inputs between -2/n and +2/n
-        return (rand.NextDouble() * 2 / numInputs) - 2 / numInputs;
+        double offset = (double)2 / numInputs;
+        return (rand.NextDouble() * (2 * offset)) - offset;
     }
 
     private void ReadData(string path)
@@ -286,5 +285,25 @@ class Network
         trainingSet = data.GetRange(0, trainingAmount);
         validationSet = data.GetRange(trainingAmount, validationAmount);
         testSet = data.GetRange(trainingAmount + validationAmount, testAmount);
+    }
+
+    public int GetHiddenNodes()
+    {
+        return numHiddenNodes;
+    }
+
+    public int GetNumCycles()
+    {
+        return numCycles;
+    }
+
+    public double GetRMSE()
+    {
+        return RMSE;
+    }
+
+    public double GetActualCycles()
+    {
+        return actualCycles;
     }
 }

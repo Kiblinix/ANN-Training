@@ -7,12 +7,27 @@ class MLPTraining
 {
     static void Main(string[] args)
     {
-        //testAll();
-        //return;        
-                
-        Network firstNetwork = new Network(5, 10000, 0.1);
-        firstNetwork.ExecuteNetwork();
-        
+        // Train Networks with different numbers of hidden nodes
+        /*for (int i = 2; i <= 12; i++)
+        {
+            // Do network 10 times each and take AVG RMSE
+            double totalRMSE = 0;
+            int cycles = 50000;
+
+            for (int j = 0; j < 10; j++)
+            {
+                Network network = new Network(i, cycles, 0.1);
+                network.ExecuteNetwork();
+
+                totalRMSE += network.GetRMSE();
+                Console.WriteLine("Cycles : " + cycles + ", Actual Cycles: " + network.GetActualCycles() + ", Nodes: " + i + ", RMSE: " + network.GetRMSE());
+            }            
+        }*/
+
+        Network network = new Network(1, 10000, 0.1);
+        network.ExecuteNetwork();
+        Console.WriteLine("Cycles : " + 10000 + ", Actual Cycles: " + network.GetActualCycles() + ", Nodes: " + 1 + ", RMSE: " + network.GetRMSE());
+
         Console.WriteLine("Press any key to exit.");
         Console.Read();
     }
