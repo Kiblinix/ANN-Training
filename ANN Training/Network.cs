@@ -12,10 +12,10 @@ class Network
     private List<Node> hiddenLayer = new List<Node>();
     private Node outputNode = new Node();
 
-    static private List<List<double>> data = new List<List<double>>();
-    static private List<List<double>> trainingSet = new List<List<double>>();
-    static private List<List<double>> validationSet = new List<List<double>>();
-    static private List<List<double>> testSet = new List<List<double>>();
+    private List<List<double>> data = new List<List<double>>();
+    private List<List<double>> trainingSet = new List<List<double>>();
+    private List<List<double>> validationSet = new List<List<double>>();
+    private List<List<double>> testSet = new List<List<double>>();
 
     private int numHiddenNodes;   
     private double stepSize;
@@ -26,9 +26,11 @@ class Network
     private double previousError = 999;
     private double RMSE;
 
+    private bool useBoldDriver = false;
+    
     // Used for de-normalising the output.
-    static private double outputColumnMin;
-    static private double outputColumnMax;
+    private double outputColumnMin;
+    private double outputColumnMax;
 
     public Network(int numHiddenNodes, int numCycles, double stepSize)
     {
@@ -123,22 +125,75 @@ class Network
 
                 // Forward pass to output node
                 outputNode.CalculateOutput();
-
+                
                 // Do backwards pass and set delta for each node
                 // Carries through to hidden nodes
                 outputNode.BackwardsPass(row[row.Count - 1]);
+
+                // Compare output of network to actual value, get error
+                // For bold driver
+                double predictedOutput = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
+                double correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
+                double beforeError = Math.Sqrt(Math.Pow((predictedOutput - correctOutput), 2));
 
                 // Update weights and biases
                 outputNode.UpdateWeights(stepSize);
                 for (var j = 0; j < hiddenLayer.Count; j++)
                 {
                     hiddenLayer[j].UpdateWeights(stepSize);
+                }
+
+                // Compare new output of network to actual value, get error
+                // For bold driver
+
+                if (n == 500)
+                {
+                    int test = 1;
+                }
+
+                if (useBoldDriver)
+                {
+                    // Forward pass to hidden layer
+                    for (var j = 0; j < hiddenLayer.Count; j++)
+                    {
+                        hiddenLayer[j].CalculateOutput();
+                    }
+
+                    // Forward pass to output node
+                    outputNode.CalculateOutput();
+
+                    double predictedOutput2 = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
+                    correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
+                    double afterError = Math.Sqrt(Math.Pow((predictedOutput2 - correctOutput), 2));
+                    
+                    // Bold Driver
+                    if (afterError > beforeError)
+                    {
+                        // Learning rate was too large
+                        stepSize *= 0.5;
+
+                        // Undo weight changes
+                        outputNode.UndoWeightChange();
+                        for (var j = 0; j < hiddenLayer.Count; j++)
+                        {
+                            hiddenLayer[j].UndoWeightChange();
+                        }
+
+                        // Try same row again
+                        i -= 1;
+                    }
+                    else
+                    {
+                        // Learning rate may be too low
+                        stepSize *= 1.1;
+                        if (stepSize > 500) stepSize = 500;
+                    }
                 }                
             }
 
-            // Every 500 epochs, test against validation set
+            // Every 100 epochs, test against validation set
             // If performance goes down, stop training.
-            if (n % 500 == 0)
+            if (n % 100 == 0)
             {
                 if (ValidateNetwork())
                 {
@@ -228,6 +283,7 @@ class Network
 
         // Calculated Root Mean Squared Error
         RMSE = Math.Sqrt(totalError / testSet.Count);
+
         //Console.WriteLine("RMSE: " + RMSE);
     }
 

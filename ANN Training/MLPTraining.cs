@@ -12,7 +12,7 @@ class MLPTraining
         {
             // Do network 10 times each and take AVG RMSE
             double totalRMSE = 0;
-            int cycles = 10000;
+            int cycles = 5000;
 
             for (int j = 0; j < 10; j++)
             {
@@ -21,9 +21,20 @@ class MLPTraining
 
                 totalRMSE += network.GetRMSE();
                 Console.WriteLine("Cycles : " + cycles + ", Actual Cycles: " + network.GetActualCycles() + ", Nodes: " + i + ", RMSE: " + network.GetRMSE());
-            }            
+            }
         }
-        
+
+        //for (int i = 0; i < 20; i++)
+        //{
+        //    Network network = new Network(5, 5000, 0.1);
+        //    network.ExecuteNetwork();
+
+        //    Console.WriteLine("Cycles : " + 5000 + ", Actual Cycles: " + network.GetActualCycles() + ", Nodes: " + i + ", RMSE: " + network.GetRMSE());
+        //}
+
+        //Network network = new Network(4, 20000, 0.1);
+        //network.ExecuteNetwork();
+
         Console.WriteLine("Press any key to exit.");
         Console.Read();
     }

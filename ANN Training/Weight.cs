@@ -2,6 +2,7 @@
 {
     public Node origin;
     public double value;
+    public double oldWeight;
 
     public Weight()
     {
