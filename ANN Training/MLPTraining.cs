@@ -8,15 +8,15 @@ class MLPTraining
     static void Main(string[] args)
     {
         // Train Networks with different numbers of hidden nodes
-        for (int i = 2; i <= 12; i++)
+        for (int i = 4; i <= 5; i++)
         {
             // Do network 10 times each and take AVG RMSE
             double totalRMSE = 0;
-            int cycles = 5000;
+            int cycles = 20000;
 
             for (int j = 0; j < 10; j++)
             {
-                Network network = new Network(i, cycles, 0.1);
+                Network network = new Network(i, cycles, 0.5);
                 network.ExecuteNetwork();
 
                 totalRMSE += network.GetRMSE();
@@ -64,92 +64,33 @@ class MLPTraining
     }
 
     static void testAll()
-    {
-        List<List<double>> data = new List<List<double>>()
+    {     
+        int numHiddenNodes = 2;
+        double stepSize = 0.1;
+
+        Network network = new Network(numHiddenNodes, 20000, stepSize);
+
+        network.data = new List<List<double>>()
         {
             new List<double>() { 1, 0, 1 }
         };
 
-        int numHiddenNodes = 2;
-        double stepSize = 0.1;
-        int numInputs = data[0].Count - 1;
+        network.trainingSet = network.data;
 
-        // Initialise Network
-        List<Node> inputLayer = new List<Node>();
-        for (int i = 0; i < numInputs; i++)
-        {
-            Node input = new Node();
-            inputLayer.Add(input);
-        }
+        network.InitialiseNetwork();
 
-        List<Node> hiddenLayer = new List<Node>();
-        for (int i = 0; i < numHiddenNodes; i++)
-        {
-            Node hiddenNode = new Node();
+        network.hiddenLayer[0].Bias = 1;
+        network.hiddenLayer[0].inputs[0].value = 3;
+        network.hiddenLayer[0].inputs[1].value = 4;
 
-            double weight = 1;
-            if (i == 1) weight = -6;
-            hiddenNode.Bias = weight;
+        network.hiddenLayer[1].Bias = -6;
+        network.hiddenLayer[1].inputs[0].value = 6;
+        network.hiddenLayer[1].inputs[1].value = 5;
 
-            for (var j = 0; j < inputLayer.Count; j++)
-            {
-                double weight2 = 3;
-                if (i == 0 & j == 1) weight2 = 4;
-                if (i == 1 & j == 0) weight2 = 6;
-                if (i == 1 & j == 1) weight2 = 5;
+        network.outputNode.Bias = -3.92;
+        network.outputNode.inputs[0].value = 2;
+        network.outputNode.inputs[1].value = 4;
 
-                Weight inputWeight = new Weight(inputLayer[j], weight2);
-                hiddenNode.inputs.Add(inputWeight);
-            }
-
-            hiddenLayer.Add(hiddenNode);
-        }
-
-        Node outputNode = new Node();
-        outputNode.Bias = -3.92;
-        for (var i = 0; i < hiddenLayer.Count; i++)
-        {
-            double weight2 = 2;
-            if (i == 1) weight2 = 4;
-            Weight inputWeight = new Weight(hiddenLayer[i], weight2);
-            outputNode.inputs.Add(inputWeight);
-        }
-
-        for (int n = 0; n < 500; n++)
-        {
-            for (int i = 0; i < data.Count; i++)
-            {
-                List<double> row = data[i];
-
-                // Set input nodes to input values
-                for (var j = 0; j < inputLayer.Count; j++)
-                {
-                    inputLayer[j].Output = row[j];
-                }
-
-                // Forward pass to hidden layer
-                for (var j = 0; j < hiddenLayer.Count; j++)
-                {
-                    hiddenLayer[j].CalculateOutput();
-                }
-
-                // Forward pass to output node
-                outputNode.CalculateOutput();
-
-                // Do backwards pass and set delta for each node
-                // Carries through to hidden nodes
-                outputNode.BackwardsPass(row[row.Count - 1]);
-
-                // Update weights and biases
-                outputNode.UpdateWeights(stepSize);
-                for (var j = 0; j < hiddenLayer.Count; j++)
-                {
-                    hiddenLayer[j].UpdateWeights(stepSize);
-                }
-             }
-        }
-
-        double output = outputNode.Output;
-        
+        network.TrainNetwork();
     }
 }

@@ -8,12 +8,12 @@ class Network
 {
     private Random rand = new Random();
 
-    private List<Node> inputLayer = new List<Node>();
-    private List<Node> hiddenLayer = new List<Node>();
-    private Node outputNode = new Node();
+    public List<Node> inputLayer = new List<Node>();
+    public List<Node> hiddenLayer = new List<Node>();
+    public Node outputNode = new Node();
 
-    private List<List<double>> data = new List<List<double>>();
-    private List<List<double>> trainingSet = new List<List<double>>();
+    public List<List<double>> data = new List<List<double>>();
+    public List<List<double>> trainingSet = new List<List<double>>();
     private List<List<double>> validationSet = new List<List<double>>();
     private List<List<double>> testSet = new List<List<double>>();
 
@@ -44,7 +44,7 @@ class Network
     {
         if (data.Count == 0)
         {
-            ReadData("../../CWDataStudent.txt");
+            ReadData("Data Set Exported.txt");
             ShuffleData();
             NormaliseData();
             SplitData();
@@ -72,7 +72,7 @@ class Network
         }
     }
 
-    private void InitialiseNetwork()
+    public void InitialiseNetwork()
     {
         numInputs = data[0].Count - 1;
         for (int i = 0; i < numInputs; i++)
@@ -103,7 +103,7 @@ class Network
         }
     }
 
-    private void TrainNetwork()
+    public void TrainNetwork()
     {
         for (int n = 0; n < numCycles; n++)
         {
@@ -132,10 +132,10 @@ class Network
 
                 // Compare output of network to actual value, get error
                 // For bold driver
-                //double predictedOutput = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
-                //double correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
-                //double beforeError = Math.Sqrt(Math.Pow((predictedOutput - correctOutput), 2));
-                double beforeError = row[row.Count - 1] - outputNode.Output;
+                double predictedOutput = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
+                double correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
+                double beforeError = Math.Sqrt(Math.Pow((predictedOutput - correctOutput), 2));
+                //double beforeError = row[row.Count - 1] - outputNode.Output;
 
                 // Update weights and biases
                 outputNode.UpdateWeights(stepSize);
@@ -145,8 +145,7 @@ class Network
                 }
 
                 // Compare new output of network to actual value, get error
-                // For bold driver
-                
+                // For bold driver                
                 if (useBoldDriver)
                 {
                     // Forward pass to hidden layer
@@ -158,10 +157,10 @@ class Network
                     // Forward pass to output node
                     outputNode.CalculateOutput();
 
-                    //double predictedOutput2 = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
-                    //correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
-                    //double afterError = Math.Sqrt(Math.Pow((predictedOutput2 - correctOutput), 2));
-                    double afterError = row[row.Count - 1] - outputNode.Output;
+                    double predictedOutput2 = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
+                    correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
+                    double afterError = Math.Sqrt(Math.Pow((predictedOutput2 - correctOutput), 2));
+                    //double afterError = row[row.Count - 1] - outputNode.Output;
 
                     // Bold Driver
                     if (afterError > beforeError)
@@ -190,7 +189,7 @@ class Network
 
             // Every 100 epochs, test against validation set
             // If performance goes down, stop training.
-            if (n % 500 == 0)
+            if (n % 200 == 0)
             {
                 if (ValidateNetwork())
                 {
@@ -274,7 +273,6 @@ class Network
             // Undo the data normalisation back to the previous min/max range
             double predictedOutput = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
             double correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
-            
             totalError += Math.Pow((predictedOutput - correctOutput), 2);
         }
 
@@ -311,9 +309,8 @@ class Network
                     {
                         failed = true;
                     }
-
-                    //if (i != 4)   // Ignore columns 2 and 3 as they have low correlation
-                        inputs.Add(field);
+                    
+                    inputs.Add(field);
                 }
 
                 if (!failed) { data.Add(inputs); }
