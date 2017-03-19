@@ -8,11 +8,11 @@ class MLPTraining
     static void Main(string[] args)
     {
         // Train Networks with different numbers of hidden nodes
-        for (int i = 4; i <= 5; i++)
+        for (int i = 2; i <= 12; i++)
         {
             // Do network 10 times each and take AVG RMSE
             double totalRMSE = 0;
-            int cycles = 20000;
+            int cycles = 50000;
 
             for (int j = 0; j < 10; j++)
             {

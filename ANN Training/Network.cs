@@ -18,7 +18,7 @@ class Network
     private List<List<double>> testSet = new List<List<double>>();
 
     private int numHiddenNodes;   
-    private double stepSize;
+    private double learningRate;
     private int numInputs;
     private int numCycles;
     private int actualCycles;
@@ -37,7 +37,7 @@ class Network
         this.numHiddenNodes = numHiddenNodes;
         this.numCycles = numCycles;
         actualCycles = numCycles;
-        this.stepSize = stepSize;
+        this.learningRate = stepSize;
     }      
 
     public void ExecuteNetwork()
@@ -138,10 +138,10 @@ class Network
                 //double beforeError = row[row.Count - 1] - outputNode.Output;
 
                 // Update weights and biases
-                outputNode.UpdateWeights(stepSize);
+                outputNode.UpdateWeights(learningRate);
                 for (var j = 0; j < hiddenLayer.Count; j++)
                 {
-                    hiddenLayer[j].UpdateWeights(stepSize);
+                    hiddenLayer[j].UpdateWeights(learningRate);
                 }
 
                 // Compare new output of network to actual value, get error
@@ -166,7 +166,7 @@ class Network
                     if (afterError > beforeError)
                     {
                         // Learning rate was too large
-                        stepSize *= 0.5;
+                        learningRate *= 0.5;
 
                         // Undo weight changes
                         outputNode.UndoWeightChange();
@@ -181,15 +181,15 @@ class Network
                     else
                     {
                         // Learning rate may be too low
-                        stepSize *= 1.1;
-                        if (stepSize > 2) stepSize = 2;
+                        learningRate *= 1.1;
+                        if (learningRate > 2) learningRate = 2;
                     }
                 }                
             }
 
             // Every 100 epochs, test against validation set
             // If performance goes down, stop training.
-            if (n % 200 == 0)
+            if (n % 500 == 0)
             {
                 if (ValidateNetwork())
                 {
@@ -198,8 +198,19 @@ class Network
                 }
             }
 
-            //if (n % 500 == 499) Console.WriteLine(n + 1 + " passes complete.");
+            learningRate = Annealing(n);            
         }
+    }
+
+    private double Annealing(int epoch)
+    {
+        double p = 0.01;
+        double q = 0.1;
+        double r = 3000;
+
+        double fraction = 1 / (1 + Math.Pow(Math.E, 10 - (20 * (double)epoch / r)));
+
+        return p + (q - p) * (1 - fraction);
     }
 
     private bool ValidateNetwork()

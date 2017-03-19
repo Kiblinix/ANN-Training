@@ -70,10 +70,10 @@ class Node
         }        
     }
 
-    public void UpdateWeights(double stepSize)
+    public void UpdateWeights(double learningRate)
     {
         oldBias = (double)Bias;
-        Bias = oldBias + stepSize * delta;
+        Bias = oldBias + learningRate * delta;
 
         // Add Momentum to Bias
         Bias = Bias + (0.9 * (Bias - oldBias));
@@ -84,7 +84,7 @@ class Node
             Node origin = weight.origin;
 
             weight.oldWeight = weight.value;
-            weight.value = weight.oldWeight + stepSize * delta * origin.Output;
+            weight.value = weight.oldWeight + learningRate * delta * origin.Output;
 
             // Add Momentum to Weight
             weight.value = weight.value + (0.9 * (weight.value - weight.oldWeight));
