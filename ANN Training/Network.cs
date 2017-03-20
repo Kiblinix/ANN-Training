@@ -26,7 +26,7 @@ class Network
     private double previousError = 999;
     private double RMSE;
 
-    private bool useBoldDriver = false;
+    private bool useKFold = true;
     
     // Used for de-normalising the output.
     private double outputColumnMin;
@@ -37,7 +37,7 @@ class Network
         this.numHiddenNodes = numHiddenNodes;
         this.numCycles = numCycles;
         actualCycles = numCycles;
-        this.learningRate = stepSize;
+        learningRate = stepSize;
     }      
 
     public void ExecuteNetwork()
@@ -47,29 +47,22 @@ class Network
             ReadData("Data Set Exported.txt");
             ShuffleData();
             NormaliseData();
-            SplitData();
-        }        
+
+            if (!useKFold) SplitData();
+            else trainingSet = data.ConvertAll(row => new List<double>(row));   // Deep copy of original data
+        }
 
         InitialiseNetwork();
-        TrainNetwork();
-        TestNetwork();        
-    }
-
-    private void ShuffleData()
-    {
-        // Randomly shuffle input data
-        // Before splitting into Training, Validation and Test sets
-        // Based on Fisher-Yates Shuffle
-
-        int n = data.Count;
-        while (n > 1)
+        if (!useKFold)
         {
-            n--;
-            int k = rand.Next(n + 1);
-            List<Double> value = data[k];
-            data[k] = data[n];
-            data[n] = value;
+            TrainNetwork();
+            TestNetwork();
         }
+        else
+        {
+            KFoldTrainNetwork();
+            TestNetwork();
+        }     
     }
 
     public void InitialiseNetwork()
@@ -129,65 +122,16 @@ class Network
                 // Do backwards pass and set delta for each node
                 // Carries through to hidden nodes
                 outputNode.BackwardsPass(row[row.Count - 1]);
-
-                // Compare output of network to actual value, get error
-                // For bold driver
-                double predictedOutput = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
-                double correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
-                double beforeError = Math.Sqrt(Math.Pow((predictedOutput - correctOutput), 2));
-                //double beforeError = row[row.Count - 1] - outputNode.Output;
-
+                
                 // Update weights and biases
                 outputNode.UpdateWeights(learningRate);
                 for (var j = 0; j < hiddenLayer.Count; j++)
                 {
                     hiddenLayer[j].UpdateWeights(learningRate);
                 }
-
-                // Compare new output of network to actual value, get error
-                // For bold driver                
-                if (useBoldDriver)
-                {
-                    // Forward pass to hidden layer
-                    for (var j = 0; j < hiddenLayer.Count; j++)
-                    {
-                        hiddenLayer[j].CalculateOutput();
-                    }
-
-                    // Forward pass to output node
-                    outputNode.CalculateOutput();
-
-                    double predictedOutput2 = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
-                    correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
-                    double afterError = Math.Sqrt(Math.Pow((predictedOutput2 - correctOutput), 2));
-                    //double afterError = row[row.Count - 1] - outputNode.Output;
-
-                    // Bold Driver
-                    if (afterError > beforeError)
-                    {
-                        // Learning rate was too large
-                        learningRate *= 0.5;
-
-                        // Undo weight changes
-                        outputNode.UndoWeightChange();
-                        for (var j = 0; j < hiddenLayer.Count; j++)
-                        {
-                            hiddenLayer[j].UndoWeightChange();
-                        }
-
-                        // Try same row again
-                        i -= 1;
-                    }
-                    else
-                    {
-                        // Learning rate may be too low
-                        learningRate *= 1.1;
-                        if (learningRate > 2) learningRate = 2;
-                    }
-                }                
             }
 
-            // Every 100 epochs, test against validation set
+            // Every 500 epochs, test against validation set
             // If performance goes down, stop training.
             if (n % 500 == 0)
             {
@@ -198,25 +142,15 @@ class Network
                 }
             }
 
+            // Adjust learning rate each cycle
             learningRate = Annealing(n);            
         }
-    }
-
-    private double Annealing(int epoch)
-    {
-        double p = 0.01;
-        double q = 0.1;
-        double r = 3000;
-
-        double fraction = 1 / (1 + Math.Pow(Math.E, 10 - (20 * (double)epoch / r)));
-
-        return p + (q - p) * (1 - fraction);
-    }
-
+    }    
+    
     private bool ValidateNetwork()
     {
         // Returns true if error has increased
-        // Testing should stop
+        // Training should stop
 
         double totalError = 0;
 
@@ -293,11 +227,91 @@ class Network
         //Console.WriteLine("RMSE: " + RMSE);
     }
 
+    public void KFoldTrainNetwork()
+    {
+        int folds = 10;        
+
+        for (int i = 0; i < folds; i++)
+        {
+            // Split data set 
+            validationSet = trainingSet.GetRange(i * (trainingSet.Count / 10), trainingSet.Count / 10);
+            trainingSet.RemoveRange(i * (trainingSet.Count / 10), trainingSet.Count / 10);
+
+            for (int n = 0; n < numCycles / folds; n++)
+            {
+                for (int j = 0; j < trainingSet.Count; j++)
+                {
+                    List<double> row = trainingSet[j];
+
+                    // Set input nodes to input values
+                    for (var k = 0; k < inputLayer.Count; k++)
+                    {
+                        inputLayer[k].Output = row[k];
+                    }
+
+                    // Forward pass to hidden layer
+                    for (var k = 0; k < hiddenLayer.Count; k++)
+                    {
+                        hiddenLayer[k].CalculateOutput();
+                    }
+
+                    // Forward pass to output node
+                    outputNode.CalculateOutput();
+
+                    // Do backwards pass and set delta for each node
+                    // Carries through to hidden nodes
+                    outputNode.BackwardsPass(row[row.Count - 1]);
+
+                    // Update weights and biases
+                    outputNode.UpdateWeights(learningRate);
+                    for (var k = 0; k < hiddenLayer.Count; k++)
+                    {
+                        hiddenLayer[k].UpdateWeights(learningRate);
+                    }
+                }
+                
+                // Every 100 epochs, test against validation set
+                // If performance goes down, stop training for this fold.
+                // Let it train at least once
+                if (n % 200 == 0 && n != 0)
+                {
+                    if (ValidateNetwork())
+                    {
+                        actualCycles += n;
+                        break;
+                    }
+                }
+
+                // Adjust learning rate each cycle
+                learningRate = Annealing(n);
+            }
+
+            // Deep copy of original data so it doesn't get changed
+            trainingSet = data.ConvertAll(row => new List<double>(row));
+            learningRate = 0.1;
+        }
+
+        // Test on whole data set at the end
+        testSet = data;
+    }
+
     private double RandomiseWeight()
     {
         // Randomise weight/bias based on number of inputs between -2/n and +2/n
         double offset = (double)2 / numInputs;
         return (rand.NextDouble() * (2 * offset)) - offset;
+    }
+
+    // Implement Annealing from lecture slides
+    private double Annealing(int epoch)
+    {
+        double p = 0.01;
+        double q = 0.1;
+        double r = 3000;
+
+        double fraction = 1 / (1 + Math.Pow(Math.E, 10 - (20 * (double)epoch / r)));
+
+        return p + (q - p) * (1 - fraction);
     }
 
     private void ReadData(string path)
@@ -369,6 +383,23 @@ class Network
         trainingSet = data.GetRange(0, trainingAmount);
         validationSet = data.GetRange(trainingAmount, validationAmount);
         testSet = data.GetRange(trainingAmount + validationAmount, testAmount);
+    }
+
+    private void ShuffleData()
+    {
+        // Randomly shuffle input data
+        // Before splitting into Training, Validation and Test sets
+        // Based on Fisher-Yates Shuffle
+
+        int n = data.Count;
+        while (n > 1)
+        {
+            n--;
+            int k = rand.Next(n + 1);
+            List<Double> value = data[k];
+            data[k] = data[n];
+            data[n] = value;
+        }
     }
 
     public int GetHiddenNodes()

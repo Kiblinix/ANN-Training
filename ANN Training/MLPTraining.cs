@@ -12,7 +12,7 @@ class MLPTraining
         {
             // Do network 10 times each and take AVG RMSE
             double totalRMSE = 0;
-            int cycles = 50000;
+            int cycles = 10000;
 
             for (int j = 0; j < 10; j++)
             {
