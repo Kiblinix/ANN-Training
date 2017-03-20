@@ -90,15 +90,4 @@ class Node
             weight.value = weight.value + (0.9 * (weight.value - weight.oldWeight));
         }
     }
-
-    public void UndoWeightChange()
-    {
-        Bias = oldBias;
-        
-        for (int i = 0; i < inputs.Count; i++)
-        {
-            Weight weight = inputs[i];
-            weight.value = weight.oldWeight;
-        }
-    }
 }
