@@ -229,13 +229,13 @@ class Network
 
     public void KFoldTrainNetwork()
     {
-        int folds = 10;        
+        int folds = 15;        
 
         for (int i = 0; i < folds; i++)
         {
             // Split data set 
-            validationSet = trainingSet.GetRange(i * (trainingSet.Count / 10), trainingSet.Count / 10);
-            trainingSet.RemoveRange(i * (trainingSet.Count / 10), trainingSet.Count / 10);
+            validationSet = trainingSet.GetRange(i * (trainingSet.Count / folds), trainingSet.Count / folds);
+            trainingSet.RemoveRange(i * (trainingSet.Count / folds), trainingSet.Count / folds);
 
             for (int n = 0; n < numCycles / folds; n++)
             {
@@ -305,8 +305,8 @@ class Network
     // Implement Annealing from lecture slides
     private double Annealing(int epoch)
     {
-        double p = 0.01;
-        double q = 0.1;
+        double p = 0.05;
+        double q = 0.5;
         double r = 3000;
 
         double fraction = 1 / (1 + Math.Pow(Math.E, 10 - (20 * (double)epoch / r)));
