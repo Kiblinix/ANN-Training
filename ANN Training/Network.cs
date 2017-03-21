@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Diagnostics;
+using System.Text;
 
 class Network
 {
@@ -195,6 +196,7 @@ class Network
     private void TestNetwork()
     {       
         double totalError = 0;
+        List<List<double>> testResults = new List<List<double>>();
 
         for (int i = 0; i < testSet.Count; i++)
         {
@@ -219,12 +221,24 @@ class Network
             double predictedOutput = ((outputNode.Output - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
             double correctOutput = ((row[row.Count - 1] - 0.1) / 0.8) * (outputColumnMax - outputColumnMin) + outputColumnMin;
             totalError += Math.Pow((predictedOutput - correctOutput), 2);
+
+            List<double> result = new List<double>()
+            {
+                predictedOutput,
+                correctOutput
+            };
+
+            testResults.Add(result);
         }
 
         // Calculated Root Mean Squared Error
         RMSE = Math.Sqrt(totalError / testSet.Count);
 
-        //Console.WriteLine("RMSE: " + RMSE);
+        // Print output for interesting networks
+        if (RMSE < 47)
+        {
+            PrintData(testResults, "results/nodes" + numHiddenNodes + "/RMSE" + ((int)RMSE).ToString() + ".csv");
+        }
     }
 
     public void KFoldTrainNetwork()
@@ -277,7 +291,7 @@ class Network
                 {
                     if (ValidateNetwork())
                     {
-                        actualCycles += n;
+                        actualCycles = n;
                         break;
                     }
                 }
@@ -288,7 +302,7 @@ class Network
 
             // Deep copy of original data so it doesn't get changed
             trainingSet = data.ConvertAll(row => new List<double>(row));
-            learningRate = 0.1;
+            //learningRate = 0.1;
         }
 
         // Test on whole data set at the end
@@ -420,5 +434,37 @@ class Network
     public double GetActualCycles()
     {
         return actualCycles;
+    }
+
+    public void PrintData(List<List<double>> data, string filePath)
+    {
+        var csv = new StringBuilder();
+        csv.AppendLine("Predicted Output, Correct Output");
+        for (var i = 0; i < data.Count; i++)
+        {
+            List<double> row = data[i];
+            string newLine = "";
+            for (int j = 0; j < row.Count; j++)
+            {
+                newLine += row[j] + ",";
+            }
+
+            // Put some stats about the network
+            if (i == 0) newLine += ",RMSE," + RMSE + ",";
+            if (i == 1) newLine += ",Cycles," + numCycles + ",";
+            if (i == 2) newLine += ",K Fold?," + useKFold + ",";
+
+            newLine.TrimEnd(',');
+            csv.AppendLine(newLine);
+        }
+        try
+        {
+            (new FileInfo(filePath)).Directory.Create();
+            File.WriteAllText(filePath, csv.ToString());
+        }
+        catch
+        {
+            // File might be in use, don't care, do nothing.
+        }
     }
 }

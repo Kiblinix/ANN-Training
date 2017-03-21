@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -8,11 +9,18 @@ class MLPTraining
     static void Main(string[] args)
     {
         // Train Networks with different numbers of hidden nodes
+        Console.WriteLine("Cycles, Nodes, AVG RMSE, MIN RMSE, MAX RMSE");
+        var csv = new StringBuilder();
+        csv.AppendLine("Cycles, Nodes, AVG RMSE, MIN RMSE, MAX RMSE");
+
         for (int i = 2; i <= 12; i++)
         {
             // Do network 10 times each and take AVG RMSE
             double totalRMSE = 0;
             int cycles = 50000;
+
+            double minRMSE = 99;
+            double maxRMSE = 0;
 
             for (int j = 0; j < 10; j++)
             {
@@ -20,49 +28,30 @@ class MLPTraining
                 network.ExecuteNetwork();
 
                 totalRMSE += network.GetRMSE();
-                Console.WriteLine("Cycles : " + cycles + ", Actual Cycles: " + network.GetActualCycles() + ", Nodes: " + i + ", RMSE: " + network.GetRMSE());
+
+                if (network.GetRMSE() > maxRMSE) maxRMSE = network.GetRMSE();
+                if (network.GetRMSE() < minRMSE) minRMSE = network.GetRMSE();
+
+                //Console.WriteLine("Cycles : " + cycles + ", Actual Cycles: " + network.GetActualCycles() + ", Nodes: " + i + ", RMSE: " + network.GetRMSE());
             }
+
+            Console.WriteLine(cycles + " , " + i + " , " + totalRMSE / 10 + " , " + minRMSE + " , " + maxRMSE);
+            csv.AppendLine(cycles + "," + i + "," + totalRMSE / 10 + "," + minRMSE + "," + maxRMSE);
         }
 
-        //for (int i = 0; i < 20; i++)
-        //{
-        //    Network network = new Network(5, 5000, 0.1);
-        //    network.ExecuteNetwork();
-
-        //    Console.WriteLine("Cycles : " + 5000 + ", Actual Cycles: " + network.GetActualCycles() + ", Nodes: " + i + ", RMSE: " + network.GetRMSE());
-        //}
-
-        //Network network = new Network(4, 20000, 0.1);
-        //network.ExecuteNetwork();
-
-        Console.WriteLine("Press any key to exit.");
-        Console.Read();
-    }
-    
-    static void printData(List<List<double>> data, string filePath)
-    {
-        var csv = new StringBuilder();
-        for (var i = 0; i < data.Count; i++)
-        {
-            List<double> row = data[i];
-            string newLine = "";
-            for (int j = 0; j < row.Count; j++)
-            {
-                newLine += row[j] + ",";
-            }
-            newLine.TrimEnd(',');
-            csv.AppendLine(newLine);
-        }
         try
         {
-            File.WriteAllText(filePath, csv.ToString());
+            File.WriteAllText("networkInfo.csv", csv.ToString());
         }
         catch
         {
             // File might be in use, don't care, do nothing.
         }
-    }
 
+        Console.WriteLine("Press any key to exit.");
+        Console.ReadKey();
+    }
+    
     static void testAll()
     {     
         int numHiddenNodes = 2;
